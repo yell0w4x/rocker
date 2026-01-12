@@ -14,16 +14,14 @@ Inspired by [Macho](https://hiphish.github.io/blog/2020/05/31/macho-man-command-
 ## Installation
 
 ```bash
-git clone https://github.com/yell0w4x/rocker.git
-cd rocker
-chmod +x rocker
-sudo cp rocker /usr/local/bin/
+sudo wget https://raw.githubusercontent.com/yell0w4x/rocker/refs/heads/main/rocker -O /usr/local/bin/rocker && \
+    sudo chmod +x /usr/local/bin/rocker
 ```
 
 ## Usage
 
 ```
-$ ./rocker --help
+$ rocker --help
 Rocker is a docker explorer script.
 Tired of messing with docker cli? Rocker is here to help you.
 
@@ -32,7 +30,7 @@ Prerequisites:
     - fzf
 
 Usage:
-    ./rocker [OPTIONS] COMMAND [SUBCOMMAND] -- [DOCKER_OPTIONS]
+    rocker [OPTIONS] COMMAND [SUBCOMMAND] -- [DOCKER_OPTIONS]
 
 Commands:
     ps               List and optionally stop/remove containers

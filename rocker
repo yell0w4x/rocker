@@ -203,15 +203,13 @@ while [ "${#}" -gt 0 ]; do
 done
 
 
-if ! command -v fzf >/dev/null 2>&1; then
-    echo "fzf is required. Please install fzf to use rocker."
-    exit 1
-fi
-
-if ! command -v docker >/dev/null 2>&1; then
-    echo "docker is required. Please install docker to use rocker."
-    exit 1
-fi
+PREREQUISITIES=(docker fzf)
+for cmd in "${PREREQUISITIES[@]}"; do
+    if ! command -v $cmd >/dev/null 2>&1; then
+        echo "$cmd is required. Please install $cmd to use rocker."
+        exit 1
+    fi
+done
 
 if [ "$((IMAGES + CONTAINERS + VOLUMES + NETWORKS))" -gt 1 ]; then
     echo "Specify only one of {ps, images, volumes, networks} at the same time."
