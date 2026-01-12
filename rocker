@@ -1,0 +1,240 @@
+#!/usr/bin/env bash
+
+
+set -euo pipefail
+
+
+usage() {
+cat << EOF
+Rocker is a docker explorer script.
+Tired of messing with docker cli? Rocker is here to help you.
+
+Prerequisites:
+    - docker
+    - fzf
+
+Usage:
+    ${0} [OPTIONS] COMMAND [SUBCOMMAND] -- [DOCKER_OPTIONS]
+
+Commands:
+    ps               List and optionally stop/remove containers
+    images           List and optionally remove images
+    volumes          List and optionally remove volumes
+    networks         List and optionally remove networks
+
+Subcommands:
+    rm               Remove containers, images, volumes and networks. 
+                     Default for images, volumes and networks.
+    stop             Stop running containers. Default for containers.
+                     For stopping --assume-yes is implied.
+
+Options:
+    -y,--assume-yes  Do not prompt for confirmation on executing 
+                     underlying docker commands.
+
+Docker options are passed to the underlying docker command.
+
+Keybindings:
+    Tab/Shift-Tab  Select/deselect item
+    Esc/Ctrl-Q     Exit
+    Enter          Confirm selection
+
+Examples:
+    List containers and stop selected ones.
+
+        rocker ps
+
+    List containers and remove selected ones.
+
+        rocker ps rm
+
+    List images and remove selected ones.
+
+        rocker images
+
+    List images and remove selected ones without prompting.
+
+        rocker images -y
+
+    List images and remove selected ones passing --force to docker.
+
+        rocker images -- --force
+EOF
+}
+
+
+promptyn () {
+    while true; do
+        read -p "${1} " yn
+        case "${yn:-n}" in
+            [Yy]* ) return 0;;
+            [Nn]* ) return 1;;
+            * ) echo "Please answer y or n";;
+        esac
+    done
+}
+
+
+docker_action() {
+    subject="${1}"
+    hint="${2}"
+    if [ -n "$subject" ]; then
+        if [ -z "${FORCE+x}" ]; then
+            echo -e "\e[33m${hint}\e[0m"
+            echo -e "\e[37m${subject}\e[0m"
+            if ! promptyn "Are you sure (to skip prompt use -y). Continue? [y/N]"; then
+                exit 1
+            fi
+        fi
+
+        if [ -n "${DOCKER_OPTIONS+x}" ]; then
+            echo "$subject" | awk '{print $1}' | xargs -I{} docker ${DOCKER_COMMAND[@]} "${DOCKER_OPTIONS[@]}" {}
+        else
+            echo "$subject" | awk '{print $1}' | xargs -I{} docker ${DOCKER_COMMAND[@]} {}
+        fi
+    fi    
+}
+
+
+export FZF_DEFAULT_OPTS='
+        --preview-window=right:50%:wrap 
+        --header-lines=1 
+        --layout=reverse 
+        --multi 
+        --prompt="Search> "'
+
+
+images() {
+    images_to_delete=$(docker images --format "table {{.ID}}\t{{.Repository}}:{{.Tag}}" | 
+        fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker image inspect {R} 2>/dev/null")
+
+    DOCKER_COMMAND=("rmi")
+    docker_action "$images_to_delete" "You are about to remove the following images:"
+}
+
+
+containers() {
+    containers_to_delete=$(docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Image}}" | 
+        fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker inspect {R} 2>/dev/null")
+
+    if [ -n "${REMOVE+x}" ]; then
+        hint="You are about to remove the following containers:"
+        DOCKER_COMMAND=("rm")
+    else
+        hint="You are about to stop the following containers:"
+        FORCE=1
+        DOCKER_COMMAND=("stop")
+    fi
+    docker_action "$containers_to_delete" "$hint"
+}
+
+
+networks() {
+    networks_to_delete=$(docker network ls --format "table {{.ID}}\t{{.Name}}\t{{.Driver}}" | 
+        fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker network inspect {R} 2>/dev/null")
+
+    DOCKER_COMMAND=("network rm")
+    docker_action "$networks_to_delete" "You are about to remove the following networks:"
+}
+
+
+volumes() {
+    volumes_to_delete=$(docker volume ls --format "table {{.Name}}\t{{.Driver}}" | 
+    fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker volume inspect {R} 2>/dev/null")
+
+    DOCKER_COMMAND=("volume rm")
+    docker_action "$volumes_to_delete" "You are about to remove the following volumes:"
+}
+
+
+IMAGES=0
+CONTAINERS=0
+VOLUMES=0
+NETWORKS=0
+
+
+while [ "${#}" -gt 0 ]; do
+    case "${1}" in
+        --help|-h)
+            usage
+            exit 0
+            ;;
+
+        --assume-yes|-y)
+            FORCE=1
+            ;;
+
+        rm)
+            REMOVE=1
+            ;;
+
+        stop)
+            STOP=1
+            ;;
+
+        images)
+            IMAGES=1
+            ;;
+
+        ps)
+            CONTAINERS=1
+            ;;
+
+        volumes)
+            VOLUMES=1
+            ;;
+
+        networks)
+            NETWORKS=1
+            ;;
+
+        --)
+            DOCKER_OPTIONS+=("${@:2}")
+            break
+            ;;
+
+        *)
+            usage
+            exit 1
+            ;;
+    esac
+
+    shift
+done
+
+
+if ! command -v fzf >/dev/null 2>&1; then
+    echo "fzf is required. Please install fzf to use rocker."
+    exit 1
+fi
+
+if ! command -v docker >/dev/null 2>&1; then
+    echo "docker is required. Please install docker to use rocker."
+    exit 1
+fi
+
+if [ "$((IMAGES + CONTAINERS + VOLUMES + NETWORKS))" -gt 1 ]; then
+    echo "Specify only one of {ps, images, volumes, networks} at the same time."
+    usage
+    exit 1
+fi
+
+if [ "${IMAGES}" == "1" ]; then
+    images
+    exit 0
+fi
+
+if [ "${CONTAINERS}" == "1" ]; then
+    containers
+    exit 0
+fi
+
+if [ "${VOLUMES}" == "1" ]; then
+    volumes
+    exit 0
+fi
+
+if [ "${NETWORKS}" == "1" ]; then
+    networks
+    exit 0
+fi
