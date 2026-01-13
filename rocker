@@ -25,6 +25,8 @@ Commands:
 Subcommands:
     rm               Remove containers, images, volumes and networks. 
                      Default for images, volumes and networks.
+    start            Start stopped containers. Default for containers.
+                     For starting --assume-yes is implied.
     stop             Stop running containers. Default for containers.
                      For stopping --assume-yes is implied.
 
@@ -114,12 +116,16 @@ images() {
 
 
 containers() {
-    containers_to_delete=$(docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Image}}" | 
+    containers_to_delete=$(docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}" | 
         fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker inspect {R} 2>/dev/null")
 
     if [ -n "${REMOVE+x}" ]; then
         hint="You are about to remove the following containers:"
         DOCKER_COMMAND=("rm")
+    elif [ -n "${START+x}" ]; then
+        hint="You are about to start the following containers:"
+        FORCE=1
+        DOCKER_COMMAND=("start")
     else
         hint="You are about to stop the following containers:"
         FORCE=1
@@ -166,6 +172,10 @@ while [ "${#}" -gt 0 ]; do
 
         rm)
             REMOVE=1
+            ;;
+
+        start)
+            START=1
             ;;
 
         stop)
