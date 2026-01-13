@@ -41,6 +41,8 @@ Commands:
 Subcommands:
     rm               Remove containers, images, volumes and networks. 
                      Default for images, volumes and networks.
+    start            Start stopped containers.
+                     For starting --assume-yes is implied.
     stop             Stop running containers. Default for containers.
                      For stopping --assume-yes is implied.
 

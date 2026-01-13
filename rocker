@@ -14,7 +14,7 @@ Prerequisites:
     - fzf
 
 Usage:
-    ${0} [OPTIONS] COMMAND [SUBCOMMAND] -- [DOCKER_OPTIONS]
+    rocker [OPTIONS] COMMAND [SUBCOMMAND] -- [DOCKER_OPTIONS]
 
 Commands:
     ps               List and optionally stop/start/remove containers (default command)
@@ -25,7 +25,7 @@ Commands:
 Subcommands:
     rm               Remove containers, images, volumes and networks. 
                      Default for images, volumes and networks.
-    start            Start stopped containers. Default for containers.
+    start            Start stopped containers.
                      For starting --assume-yes is implied.
     stop             Stop running containers. Default for containers.
                      For stopping --assume-yes is implied.
