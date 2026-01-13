@@ -33,7 +33,7 @@ Usage:
     rocker [OPTIONS] COMMAND [SUBCOMMAND] -- [DOCKER_OPTIONS]
 
 Commands:
-    ps               List and optionally stop/remove containers
+    ps               List and optionally stop/start/remove containers (default command)
     images           List and optionally remove images
     volumes          List and optionally remove volumes
     networks         List and optionally remove networks

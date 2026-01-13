@@ -17,7 +17,7 @@ Usage:
     ${0} [OPTIONS] COMMAND [SUBCOMMAND] -- [DOCKER_OPTIONS]
 
 Commands:
-    ps               List and optionally stop/remove containers
+    ps               List and optionally stop/start/remove containers (default command)
     images           List and optionally remove images
     volumes          List and optionally remove volumes
     networks         List and optionally remove networks
@@ -225,6 +225,10 @@ if [ "$((IMAGES + CONTAINERS + VOLUMES + NETWORKS))" -gt 1 ]; then
     echo "Specify only one of {ps, images, volumes, networks} at the same time."
     usage
     exit 1
+fi
+
+if [ "$((IMAGES + CONTAINERS + VOLUMES + NETWORKS))" -eq 0 ]; then
+    CONTAINERS=1
 fi
 
 if [ "${IMAGES}" == "1" ]; then
