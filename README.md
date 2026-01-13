@@ -8,8 +8,9 @@ Inspired by [Macho](https://hiphish.github.io/blog/2020/05/31/macho-man-command-
 
 ## Prerequisites
 
-- Docker
-- [Fzf](https://github.com/junegunn/fzf)
+- docker
+- [fzf](https://github.com/junegunn/fzf)
+- bat (optional, if installed preview will be colored)
 
 ## Installation
 
@@ -25,12 +26,13 @@ $ rocker --help
 Rocker is a docker explorer script.
 Tired of messing with docker cli? Rocker is here to help you.
 
+Usage:
+    rocker [OPTIONS] [COMMAND] [SUBCOMMAND] -- [DOCKER_OPTIONS]
+
 Prerequisites:
     - docker
     - fzf
-
-Usage:
-    rocker [OPTIONS] COMMAND [SUBCOMMAND] -- [DOCKER_OPTIONS]
+    - bat (optional, if installed preview will be colored)
 
 Commands:
     ps               List and optionally stop/start/remove containers (default command)
@@ -50,12 +52,14 @@ Options:
     -y,--assume-yes  Do not prompt for confirmation on executing 
                      underlying docker commands.
 
-Docker options are passed to the underlying docker command.
-
 Keybindings:
     Tab/Shift-Tab  Select/deselect item
     Esc/Ctrl-Q     Exit
     Enter          Confirm selection
+
+Notes:
+    Override BAT_THEME environment variable to change the theme of bat.
+    Docker options are passed to the underlying docker command.
 
 Examples:
     List containers and stop selected ones.

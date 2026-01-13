@@ -9,12 +9,13 @@ cat << EOF
 Rocker is a docker explorer script.
 Tired of messing with docker cli? Rocker is here to help you.
 
+Usage:
+    rocker [OPTIONS] [COMMAND] [SUBCOMMAND] -- [DOCKER_OPTIONS]
+
 Prerequisites:
     - docker
     - fzf
-
-Usage:
-    rocker [OPTIONS] COMMAND [SUBCOMMAND] -- [DOCKER_OPTIONS]
+    - bat (optional, if installed preview will be colored)
 
 Commands:
     ps               List and optionally stop/start/remove containers (default command)
@@ -34,12 +35,14 @@ Options:
     -y,--assume-yes  Do not prompt for confirmation on executing 
                      underlying docker commands.
 
-Docker options are passed to the underlying docker command.
-
 Keybindings:
     Tab/Shift-Tab  Select/deselect item
     Esc/Ctrl-Q     Exit
     Enter          Confirm selection
+
+Notes:
+    Override BAT_THEME environment variable to change the theme of bat.
+    Docker options are passed to the underlying docker command.
 
 Examples:
     List containers and stop selected ones.
@@ -102,13 +105,25 @@ export FZF_DEFAULT_OPTS='
         --preview-window=right:50%:wrap 
         --header-lines=1 
         --layout=reverse 
+        --ansi
         --multi 
         --prompt="Search> "'
 
 
+if command -v bat &>/dev/null; then
+    BAT=1
+    export BAT_THEME=${BAT_THEME:-"Monokai Extended"}
+fi
+
+
 images() {
-    images_to_delete=$(docker images --format "table {{.ID}}\t{{.Repository}}:{{.Tag}}" | 
-        fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker image inspect {R} 2>/dev/null")
+    if [ -n "${BAT+x}" ]; then
+        images_to_delete=$(docker images --format "table {{.ID}}\t{{.Repository}}:{{.Tag}}" | 
+            fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker image inspect {R} 2>/dev/null | bat --language json --color=always --style=numbers")
+    else
+        images_to_delete=$(docker images --format "table {{.ID}}\t{{.Repository}}:{{.Tag}}" | 
+            fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker image inspect {R} 2>/dev/null")
+    fi
 
     DOCKER_COMMAND=("rmi")
     docker_action "$images_to_delete" "You are about to remove the following images:"
@@ -116,8 +131,13 @@ images() {
 
 
 containers() {
-    containers_to_delete=$(docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}" | 
-        fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker inspect {R} 2>/dev/null")
+    if [ -n "${BAT+x}" ]; then
+        containers_to_delete=$(docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}" | 
+            fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker inspect {R} 2>/dev/null | bat --language json --color=always --style=numbers")
+    else
+        containers_to_delete=$(docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}" | 
+            fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker inspect {R} 2>/dev/null")
+    fi
 
     if [ -n "${REMOVE+x}" ]; then
         hint="You are about to remove the following containers:"
@@ -136,8 +156,13 @@ containers() {
 
 
 networks() {
-    networks_to_delete=$(docker network ls --format "table {{.ID}}\t{{.Name}}\t{{.Driver}}" | 
-        fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker network inspect {R} 2>/dev/null")
+    if [ -n "${BAT+x}" ]; then
+        networks_to_delete=$(docker network ls --format "table {{.ID}}\t{{.Name}}\t{{.Driver}}" | 
+            fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker network inspect {R} 2>/dev/null | bat --language json --color=always --style=numbers")
+    else
+        networks_to_delete=$(docker network ls --format "table {{.ID}}\t{{.Name}}\t{{.Driver}}" | 
+            fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker network inspect {R} 2>/dev/null")
+    fi
 
     DOCKER_COMMAND=("network rm")
     docker_action "$networks_to_delete" "You are about to remove the following networks:"
@@ -145,8 +170,13 @@ networks() {
 
 
 volumes() {
-    volumes_to_delete=$(docker volume ls --format "table {{.Name}}\t{{.Driver}}" | 
-    fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker volume inspect {R} 2>/dev/null")
+    if [ -n "${BAT+x}" ]; then
+        volumes_to_delete=$(docker volume ls --format "table {{.Name}}\t{{.Driver}}" | 
+            fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker volume inspect {R} 2>/dev/null | bat --language json --color=always --style=numbers")
+    else
+        volumes_to_delete=$(docker volume ls --format "table {{.Name}}\t{{.Driver}}" | 
+            fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker volume inspect {R} 2>/dev/null")
+    fi
 
     DOCKER_COMMAND=("volume rm")
     docker_action "$volumes_to_delete" "You are about to remove the following volumes:"
