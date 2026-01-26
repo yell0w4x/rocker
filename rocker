@@ -132,10 +132,10 @@ images() {
 
 containers() {
     if [ -n "${BAT+x}" ]; then
-        containers_to_delete=$(docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}" | 
-            fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker inspect {R} 2>/dev/null | bat --language json --color=always --style=numbers")
+        containers_to_delete=$(docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}" | awk '/Up/ {print "\033[1;34m" $0 "\033[0m"; next} {print $0}' |
+            fzf --ansi --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker inspect {R} 2>/dev/null | bat --language json --color=always --style=numbers")
     else
-        containers_to_delete=$(docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}" | 
+        containers_to_delete=$(docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}" | awk '/Up/ {print "\033[1;34m" $0 "\033[0m"; next} {print $0}' |
             fzf --preview "echo {} | awk '{print \$1}' | xargs -I{R} docker inspect {R} 2>/dev/null")
     fi
 
